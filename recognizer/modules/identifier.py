@@ -3,6 +3,7 @@ import os
 from tracker.sort import *
 from utils.timer import Timer
 from utils.general import *
+from utils.eval_util import *
 import operator  # 나중에 없애야함 너무 비효율적
 # https://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
 
@@ -16,7 +17,8 @@ AVAILABLE_RESOLUTIONS = {
 
 
 class Identifier:
-    def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None):
+    def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
+                 evaluation=False):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
@@ -38,7 +40,16 @@ class Identifier:
         self.identified = {}
         self.tsr = tsr
 
-    def run(self, img_raw, boxes):
+        self.evaluation = evaluation
+        if self.evaluation:
+            self.evaluator = Counter(self.encoder.get_faces_cnt(), self.encoder.get_faces_names())
+
+    def run(self, img_raw, boxes, gt_name: str = None):
+        if self.evaluation and not gt_name:
+            exit('[ERROR] If evaluation mode is activated, Ground_Truth name is required to method: Identifier.run()')
+        """
+        gt_name : temp param for present evaluator TODO: bbox based evaluation...
+        """
         self.timer.tic()
         face_boxes = []
 
@@ -53,15 +64,21 @@ class Identifier:
             if id in self.identified:
                 self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
             else:
-                self.identified.update({id: {k: 0 for k in self.encoder.get_faces_name() + ['-']}})
+                self.identified.update({id: {k: 0 for k in self.encoder.get_faces_names() + ['-']}})
                 self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
             face_boxes.append((box[:4], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
 
-        [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]
-
         self.timer.toc()
-        return img_raw
+        if self.evaluation:
+            [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
+        else:
+            [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]
+            return img_raw
 
     def get_time_str(self):
         # returns computing time for last operation and average
         return f'{self.timer.diff:.4f}', f'{self.timer.average_time:.4f}'
+
+    def get_evaluator(self):
+        if self.evaluation:
+            return self.evaluator

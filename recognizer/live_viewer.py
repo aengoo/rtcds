@@ -24,7 +24,7 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         det_res='sHD' if OPT.dual_res else OPT.vid_res,
                         idt_res=OPT.vid_res,
                         bbox_pad=OPT.bbox_pad,
-                        tsr=1)
+                        tsr=10)
 
 cap = cv2.VideoCapture(0)
 timer = Timer()

@@ -22,10 +22,12 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         det_res='sHD' if OPT.dual_res else OPT.vid_res,
                         idt_res=OPT.vid_res,
                         bbox_pad=OPT.bbox_pad,
-                        tsr=1)
+                        tsr=10,
+                        evaluation=True)
 
 vid_list = os.listdir(os.path.join(OPT.data, OPT.vid_path))
 for vid_idx, vid_name in enumerate(vid_list):
+    print(f'[{vid_idx+1:d}/{len(vid_list):d}] Processing...')
     stream = LoadImages(os.path.join(OPT.data, OPT.vid_path, vid_name), print_info=False)
 
     for frame_idx, frame_data in enumerate(stream):
@@ -33,9 +35,15 @@ for vid_idx, vid_name in enumerate(vid_list):
         img_tensor = cv2.resize(img_raw, (640, 360)) if OPT.dual_res else copy.deepcopy(img_raw)
 
         dets = detector.run(img_tensor)
-        idts = identifier.run(img_raw, dets)
+        identifier.run(img_raw, dets, gt_name=str(vid_name).split('_')[0])
 
-        cv2.imshow('test', idts)
-        if cv2.waitKey(1) == ord('q'):
-            raise StopIteration
+        # cv2.imshow('test', idts)
+        # if cv2.waitKey(1) == ord('q'):
+        #     raise StopIteration
+
+counter = identifier.get_evaluator()
+print(counter.get_mat())
+print('Acc:', counter.get_accuracy())
+counter.save_csv(save_path='./result.csv')
+# print('PR:', counter.get_PR())
 
