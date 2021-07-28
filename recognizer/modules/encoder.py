@@ -76,5 +76,5 @@ class EncodeFace:
     def get_faces_cnt(self):
         return len(self.encodings)
 
-    def get_faces_name(self):
+    def get_faces_names(self):
         return self.face_names
