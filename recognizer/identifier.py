@@ -14,8 +14,16 @@ AVAILABLE_RESOLUTIONS = {
     'VGA': (480, 640, 1),
 }
 
+
 class Identifier:
-    def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, timer: Timer = None):
+    def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None):
+        """
+        face_path : path of face images for face matching(identification)
+        det_res : detection resolution
+        idt_res : identification resolution
+        bbox_pad : padding size for bounding boxes
+        tsr : Tracking Score Ratio
+        """
         self.encoder = face_encoder.EncodeFace(face_path)
 
         self.faces = []
@@ -28,6 +36,7 @@ class Identifier:
         self.pad = bbox_pad * AVAILABLE_RESOLUTIONS[idt_res][2]
         self.timer = Timer() if timer is None else timer
         self.identified = {}
+        self.tsr = tsr
 
     def run(self, img_raw, boxes):
         self.timer.tic()
@@ -42,10 +51,10 @@ class Identifier:
 
             face_name = self.encoder.match_face(cropped)
             if id in self.identified:
-                self.identified[id][face_name] += 1 if face_name == '-' else 10
+                self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
             else:
                 self.identified.update({id: {k: 0 for k in self.encoder.get_faces_name() + ['-']}})
-                self.identified[id][face_name] += 1 if face_name == '-' else 10
+                self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
             face_boxes.append((box[:4], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
 
         [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]

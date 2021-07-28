@@ -24,7 +24,8 @@ detector = Detector(weight_path=os.path.join(OPT.data, OPT.weight), model='re50'
 identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         det_res='sHD' if OPT.dual_res else OPT.vid_res,
                         idt_res=OPT.vid_res,
-                        bbox_pad=OPT.bbox_pad)
+                        bbox_pad=OPT.bbox_pad,
+                        tsr=1)
 
 vid_list = os.listdir(os.path.join(OPT.data, OPT.vid_path))
 for vid_idx, vid_name in enumerate(vid_list):

@@ -4,8 +4,6 @@
 recognizer/dlib/
 /data/
 /stream-server/
-*.mp4
-
 
 ### Linux ###
 *~
