@@ -6,3 +6,6 @@
 This project has no commercial purpose.
 
 I'd appreciate any advice as I'm ignorant of the license notation.
+
+mail : nu_start@naver.com
+
