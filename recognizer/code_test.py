@@ -8,5 +8,13 @@ print(conf_mat)
 from utils.eval_util import *
 
 cnt = Counter(4, cls_indices)
-cnt.count('KIM', '-')
+cnt.count('KIM', 'KANG')
+cnt.count('KIM', 'KIM')
+cnt.count('KANG', 'KANG')
+cnt.count('CHOI', 'CHOI')
+cnt.count('KIM', 'CHOI')
+
+
 cnt.print_mat()
+print('acc:', cnt.get_accuracy())
+print('PR:', cnt.get_PR('KIM'))
