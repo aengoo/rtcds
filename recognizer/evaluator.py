@@ -1,12 +1,9 @@
 from __future__ import print_function
 import argparse
-from detector import Detector
-from identifier import Identifier
-import os
-import cv2
-import copy
-from utils.timer import Timer
+from modules.detector import Detector
+from modules.identifier import Identifier
 from utils.data_utils import *
+import copy
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, default='../data', help='')

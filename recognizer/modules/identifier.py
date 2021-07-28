@@ -1,4 +1,4 @@
-import embed.embedding as face_encoder
+import modules.encoder as face_encoder
 import os
 from tracker.sort import *
 from utils.timer import Timer
