@@ -16,6 +16,10 @@ parser.add_argument('--bbox-pad', type=int, default=10, help='')
 parser.add_argument('--dual-res', action='store_true', help='')
 parser.add_argument('--no-trk', action='store_true', help='do not apply tracking')
 parser.add_argument('--eval-name', type=str, default='result', help='')
+parser.add_argument('--trk-timing', type=str, default='default', help='default, endpoint, number(digit)')
+parser.add_argument('--many-lm', action='store_true', help='works as 68 landmarks')
+# TODO: trk_timing - number implementation
+
 OPT = parser.parse_args()
 if OPT.dual_res and (OPT.vid_res == 'VGA'):
     exit()
@@ -30,7 +34,9 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         tsr=10,
                         evaluation=True,
                         tracking=not OPT.no_trk,
-                        timer=idt_timer)
+                        timer=idt_timer,
+                        trk_timing=OPT.trk_timing,
+                        mlm=OPT.many_lm)
 
 vid_list = os.listdir(os.path.join(OPT.data, OPT.vid_path))
 for vid_idx, vid_name in enumerate(vid_list):
@@ -49,6 +55,8 @@ for vid_idx, vid_name in enumerate(vid_list):
         # cv2.imshow('test', idts)
         # if cv2.waitKey(1) == ord('q'):
         #     raise StopIteration
+    if OPT.trk_timing == 'endpoint':
+        identifier.count_endpoint(gt_name=str(vid_name).split('_')[0])
 
 counter = identifier.get_evaluator()
 print(counter.get_mat())

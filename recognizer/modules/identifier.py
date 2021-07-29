@@ -18,15 +18,19 @@ AVAILABLE_RESOLUTIONS = {
 
 class Identifier:
     def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
-                 evaluation=False, tracking: bool = True):
+                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
         idt_res : identification resolution
         bbox_pad : padding size for bounding boxes
         tsr : Tracking Score Ratio
+        evaluation : evaluation mode activation
+        tracking :tracking activation
+        trk_timing : counting timing works with tracking
+        mlm : many(68) landmarks
         """
-        self.encoder = face_encoder.EncodeFace(face_path)
+        self.encoder = face_encoder.EncodeFace(face_path, mlm)
 
         self.faces = []
         self.tracker = Sort(max_age=3, min_hits=3, iou_threshold=0.3)
@@ -44,6 +48,7 @@ class Identifier:
         if self.evaluation:
             self.evaluator = Counter(self.encoder.get_faces_cnt(), self.encoder.get_faces_names())
         self.tracking = tracking
+        self.trk_timing = trk_timing
 
     def run(self, img_raw, boxes, gt_name: str = None):
         if self.evaluation and not gt_name:
@@ -74,7 +79,8 @@ class Identifier:
 
         self.timer.toc()
         if self.evaluation:
-            [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
+            if self.trk_timing == 'default':
+                [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
         else:
             [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]
             return img_raw
@@ -86,3 +92,9 @@ class Identifier:
     def get_evaluator(self):
         if self.evaluation:
             return self.evaluator
+
+    def count_endpoint(self, gt_name):
+        if self.trk_timing == 'endpoint':
+            for idt in self.identified.keys():
+                self.evaluator.count(gt_name, max(self.identified[idt].items(), key=operator.itemgetter(1))[0])
+        self.identified = {}

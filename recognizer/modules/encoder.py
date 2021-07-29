@@ -9,8 +9,9 @@ code from github/ageitgey/face_recognition
 
 
 class EncodeFace:
-    def __init__(self, src):
+    def __init__(self, src, mlm: bool = False):
         self.src = os.path.join(src)
+        self.model = 'large' if mlm else 'small'
         os.makedirs(self.src, exist_ok=True)
 
         self.encodings = []
@@ -29,7 +30,7 @@ class EncodeFace:
                 self.face_names.append(face_dir)
                 # img = face_recognition.load_image_file(str(os.path.join(path_face_dir, face_img)))
                 img = face_recognition.load_image_file(os.path.join(path_face_dir, face_img))
-                encodings = face_recognition.face_encodings(img)
+                encodings = face_recognition.face_encodings(img, model=self.model)
                 if len(encodings):
                     encoding = encodings[0]
                     self.encodings.append(encoding)
@@ -59,7 +60,7 @@ class EncodeFace:
         # print(face.shape)
         name = "-"
 
-        face_encodings = face_recognition.face_encodings(face[:, :, ::-1])
+        face_encodings = face_recognition.face_encodings(face[:, :, ::-1], model=self.model)
         if len(face_encodings):
             face_encoding = face_encodings[0]
             matches = face_recognition.compare_faces(self.encodings, face_encoding)
