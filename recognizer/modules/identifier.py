@@ -18,7 +18,7 @@ AVAILABLE_RESOLUTIONS = {
 
 class Identifier:
     def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
-                 evaluation=False):
+                 evaluation=False, tracking: bool = True):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
@@ -43,6 +43,7 @@ class Identifier:
         self.evaluation = evaluation
         if self.evaluation:
             self.evaluator = Counter(self.encoder.get_faces_cnt(), self.encoder.get_faces_names())
+        self.tracking = tracking
 
     def run(self, img_raw, boxes, gt_name: str = None):
         if self.evaluation and not gt_name:
@@ -61,12 +62,15 @@ class Identifier:
             cropped = img_raw[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]]
 
             face_name = self.encoder.match_face(cropped)
-            if id in self.identified:
-                self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
+            if self.tracking:
+                if id in self.identified:
+                    self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
+                else:
+                    self.identified.update({id: {k: 0 for k in self.encoder.get_faces_names() + ['-']}})
+                    self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
+                face_boxes.append((crop_box[:4], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
             else:
-                self.identified.update({id: {k: 0 for k in self.encoder.get_faces_names() + ['-']}})
-                self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
-            face_boxes.append((box[:4], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
+                face_boxes.append((crop_box[:4], face_name))
 
         self.timer.toc()
         if self.evaluation:
