@@ -81,7 +81,7 @@ Overall Time : 33ms
 
 
 
-**Test3. Counted at endpoint of tracking **
+**Test3. Counted at endpoint of tracking**
 
 |             | Predict ▶ |      |      |      |              |
 | ----------- | --------- | ---- | ---- | ---- | ------------ |
@@ -97,7 +97,7 @@ Overall Time : 34ms
 
 
 
-**Test4. Tracking, Landmark-68 (default is 5) **
+**Test4. Tracking, Landmark-68 (default is 5)**
 
 |             | Predict ▶ |      |      |      |              |
 | ----------- | --------- | ---- | ---- | ---- | ------------ |
@@ -113,7 +113,7 @@ Overall Time : 33ms
 
 
 
-**Test5. No Tracking, Landmark-68 (default is 5) **
+**Test5. No Tracking, Landmark-68 (default is 5)**
 
 |             | Predict ▶ |      |      |      |              |
 | ----------- | --------- | ---- | ---- | ---- | ------------ |
