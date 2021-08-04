@@ -9,12 +9,30 @@ I'd appreciate to any advice for my ignorance of the license notation.
 
 mail : nu_start@naver.com
 
-　
+
 ------
 
+**Source codes are from...**
 
+face-recognition: https://github.com/ageitgey/face_recognition
 
+dlib: http://dlib.net/
 
+RetinaFace: https://github.com/biubug6/Pytorch_Retinaface
+
+SORT: https://github.com/abewley/sort
+
+　
+
+**Refers.**
+
+King, Davis E. "Dlib-ml: A machine learning toolkit." *The Journal of Machine Learning Research* 10 (2009): 1755-1758.
+
+Deng, Jiankang, et al. "Retinaface: Single-shot multi-level face localisation in the wild." *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition*. 2020.
+
+Deng, Jiankang, et al. "Retinaface: Single-stage dense face localisation in the wild." *arXiv preprint arXiv:1905.00641* (2019).
+
+Bewley, Alex, et al. "Simple online and realtime tracking." *2016 IEEE international conference on image processing (ICIP)*. IEEE, 2016.
 
 ------
 
