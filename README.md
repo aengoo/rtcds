@@ -10,6 +10,11 @@ I'd appreciate to any advice for my ignorance of the license notation.
 mail : nu_start@naver.com
 
 　
+------
+
+
+
+
 
 ------
 
