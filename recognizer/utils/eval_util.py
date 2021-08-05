@@ -25,12 +25,26 @@ class Counter:
 
     def get_accuracy(self):
         di = np.diag_indices(self.num_cls)
-        return self.conf_mat.to_numpy()[di].sum()/self.conf_mat.to_numpy().sum()
+        return self.conf_mat.to_numpy()[di].sum() / self.conf_mat.to_numpy().sum()
 
-    def get_PR(self, cls_name: str):
-        precision = self.conf_mat[cls_name][cls_name]/self.conf_mat[cls_name].sum()
-        recall = self.conf_mat[cls_name][cls_name] / self.conf_mat.T[cls_name].sum()
-        return precision, recall
+    def get_single_precision(self, cls_name: str):
+        return self.conf_mat[cls_name][cls_name] / self.conf_mat[cls_name].sum()
+
+    def get_single_recall(self, cls_name: str):
+        return self.conf_mat[cls_name][cls_name] / self.conf_mat.T[cls_name].sum()
+
+    def get_multi_precision(self):
+        # returns 'literally' averaged precision of all classes
+        return sum(self.get_single_precision(cls_name=cls) for cls in self.cls_indices)/self.num_cls
+
+    def get_multi_recall(self):
+        # returns 'literally' averaged recall of all classes
+        return sum(self.get_single_recall(cls_name=cls) for cls in self.cls_indices)/self.num_cls
+
+    def get_f1_score(self):
+        precision = self.get_multi_precision()
+        recall = self.get_multi_recall()
+        return (2 * precision * recall) / (precision + recall)
 
 
 '''

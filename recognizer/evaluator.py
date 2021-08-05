@@ -13,6 +13,7 @@ parser.add_argument('--vid-path', type=str, default='test/temp', help='')
 parser.add_argument('--weight', type=str, default='weights/Resnet50_Final.pth', help='')
 parser.add_argument('--vid-res', type=str, default='FHD', help='among FHD, HD, sHD and VGA')
 parser.add_argument('--bbox-pad', type=int, default=10, help='')
+parser.add_argument('--tsr', type=int, default=10, help='')
 parser.add_argument('--dual-res', action='store_true', help='')
 parser.add_argument('--no-trk', action='store_true', help='do not apply tracking')
 parser.add_argument('--eval-name', type=str, default='result', help='')
@@ -31,7 +32,7 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         det_res='sHD' if OPT.dual_res else OPT.vid_res,
                         idt_res=OPT.vid_res,
                         bbox_pad=OPT.bbox_pad,
-                        tsr=10,
+                        tsr=OPT.tsr,
                         evaluation=True,
                         tracking=not OPT.no_trk,
                         timer=idt_timer,
@@ -58,15 +59,28 @@ for vid_idx, vid_name in enumerate(vid_list):
     if OPT.trk_timing == 'endpoint':
         identifier.count_endpoint(gt_name=str(vid_name).split('_')[0])
 
+print('options:', OPT)
 counter = identifier.get_evaluator()
 print(counter.get_mat())
 print('Acc:', counter.get_accuracy())
+print('Each-Precision:', [cls + format(counter.get_single_precision(cls), '.4f') for cls in counter.cls_indices])
+print('Multi-Precision:', counter.get_multi_precision())
+print('Multi-Recall:', counter.get_multi_recall())
+print('F1-score:', counter.get_f1_score())
+
 # print('PR:', counter.get_PR())
 counter.save_csv(save_path=os.path.join(OPT.data, 'results', 'mat', OPT.eval_name + '.csv'))
 print(f'det_time: {det_timer.average_time:.3f}')
 print(f'idt_time: {idt_timer.average_time:.3f}')
 print(f'overall_time: {overall_timer.average_time:.3f}')
 with open(os.path.join(OPT.data, 'results', 'txt', OPT.eval_name + '.txt'), 'a') as f:
+    print('options:', OPT, file=f)
+    print(counter.get_mat(), file=f)
+    print('Acc:', counter.get_accuracy(), file=f)
+    print('Each-Precision:', [cls + format(counter.get_single_precision(cls), '.4f') for cls in counter.cls_indices], file=f)
+    print('Multi-Precision:', counter.get_multi_precision(), file=f)
+    print('Multi-Recall:', counter.get_multi_recall(), file=f)
+    print('F1-score:', counter.get_f1_score(), file=f)
     f.write(f'det_time: {det_timer.average_time:.3f}\n')
     f.write(f'idt_time: {idt_timer.average_time:.3f}\n')
     f.write(f'overall_time: {overall_timer.average_time:.3f}\n')
