@@ -18,7 +18,7 @@ AVAILABLE_RESOLUTIONS = {
 
 class Identifier:
     def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
-                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False):
+                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False, conf_thresh: float = 0.0):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
@@ -49,6 +49,7 @@ class Identifier:
             self.evaluator = Counter(self.encoder.get_faces_cnt(), self.encoder.get_faces_names())
         self.tracking = tracking
         self.trk_timing = trk_timing
+        self.conf_thresh = conf_thresh
 
     def run(self, img_raw, boxes, gt_name: str = None):
         if self.evaluation and not gt_name:
@@ -58,9 +59,10 @@ class Identifier:
         """
         self.timer.tic()
         face_boxes = []
-
+        boxes = boxes[boxes[:, 4] >= self.conf_thresh]
         tracked = self.tracker.update(boxes)
         for tbox in tracked:
+            # 좌표형식 (xy,xy)
             id = int(tbox[4])
             box = [int(b) * self.rat for b in tbox[:4]]
             crop_box = [int(box[0]) - self.pad, int(box[1]) - self.pad, int(box[2]) + self.pad, int(box[3]) + self.pad]
@@ -82,6 +84,7 @@ class Identifier:
             if self.trk_timing == 'default':
                 [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
         else:
+            [plot_center_text(box[:4], img_raw, label=format(box[4], '.4f')) for box in boxes]
             [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]
             return img_raw
 

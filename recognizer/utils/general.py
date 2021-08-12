@@ -16,6 +16,13 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
+def plot_center_text(x, img, label: str, color=None):
+    tl = round(0.001 * (img.shape[0] + img.shape[1]) / 2) + 1
+    tf = max(tl - 1, 1)  # font thickness
+    c1, c2 = (int((x[0] + x[2]) / 2), int((x[1] + x[3]) / 2)), (int(x[2]), int(x[3]))
+    cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [0, 0, 255], thickness=tf, lineType=cv2.LINE_AA)
+
+
 def plot_frame_info(img, label, color=None):
     color = color or [0, 255, 0]
     tl = round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1

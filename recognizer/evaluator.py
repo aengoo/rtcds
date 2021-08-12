@@ -19,6 +19,7 @@ parser.add_argument('--no-trk', action='store_true', help='do not apply tracking
 parser.add_argument('--eval-name', type=str, default='result', help='')
 parser.add_argument('--trk-timing', type=str, default='default', help='default, endpoint, number(digit)')
 parser.add_argument('--many-lm', action='store_true', help='works as 68 landmarks')
+parser.add_argument('--conf_thresh', type=float, default=0.995, help='')
 # TODO: conf_thres test
 
 OPT = parser.parse_args()
