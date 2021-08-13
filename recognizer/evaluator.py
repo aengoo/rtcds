@@ -19,7 +19,7 @@ parser.add_argument('--no-trk', action='store_true', help='do not apply tracking
 parser.add_argument('--eval-name', type=str, default='result', help='')
 parser.add_argument('--trk-timing', type=str, default='default', help='default, endpoint, number(digit)')
 parser.add_argument('--many-lm', action='store_true', help='works as 68 landmarks')
-parser.add_argument('--conf_thresh', type=float, default=0.995, help='')
+parser.add_argument('--conf-thresh', type=float, default=0.0, help='')
 # TODO: conf_thres test
 
 OPT = parser.parse_args()
@@ -38,7 +38,8 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         tracking=not OPT.no_trk,
                         timer=idt_timer,
                         trk_timing=OPT.trk_timing,
-                        mlm=OPT.many_lm)
+                        mlm=OPT.many_lm,
+                        conf_thresh=OPT.conf_thresh)
 
 vid_list = os.listdir(os.path.join(OPT.data, OPT.vid_path))
 for vid_idx, vid_name in enumerate(vid_list):
