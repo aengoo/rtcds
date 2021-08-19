@@ -4,6 +4,7 @@
 recognizer/dlib/
 /data/
 /stream-server/
+/save/
 
 ### Linux ###
 *~
