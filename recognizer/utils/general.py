@@ -37,11 +37,11 @@ def get_iou(box1, box2):
     Parameters
     ----------
     bb1 : dict
-        Keys: {'x1', 'x2', 'y1', 'y2'}
+        Keys: {'x1', 'y1', 'x2', 'y2'}
         The (x1, y1) position is at the top left corner,
         the (x2, y2) position is at the bottom right corner
     bb2 : dict
-        Keys: {'x1', 'x2', 'y1', 'y2'}
+        Keys: {'x1', 'y1', 'x2', 'y2'}
         The (x, y) position is at the top left corner,
         the (x2, y2) position is at the bottom right corner
 

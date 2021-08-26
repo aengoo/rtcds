@@ -12,9 +12,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 from __future__ import print_function
+
+import os
 import numpy as np
+from skimage import io
+
+import glob
+import time
+import argparse
 from filterpy.kalman import KalmanFilter
 
 np.random.seed(0)
@@ -26,7 +32,6 @@ def linear_assignment(cost_matrix):
         _, x, y = lap.lapjv(cost_matrix, extend_cost=True)
         return np.array([[y[i], i] for i in x if i >= 0])  #
     except ImportError:
-        print('lap import error')
         from scipy.optimize import linear_sum_assignment
         x, y = linear_sum_assignment(cost_matrix)
         return np.array(list(zip(x, y)))
@@ -111,6 +116,7 @@ class KalmanBoxTracker(object):
         self.hits = 0
         self.hit_streak = 0
         self.age = 0
+        self.score = np.array([bbox[4]])
 
     def update(self, bbox):
         """
@@ -121,6 +127,7 @@ class KalmanBoxTracker(object):
         self.hits += 1
         self.hit_streak += 1
         self.kf.update(convert_bbox_to_z(bbox))
+        self.score = np.array([bbox[4]])
 
     def predict(self):
         """
@@ -133,14 +140,14 @@ class KalmanBoxTracker(object):
         if (self.time_since_update > 0):
             self.hit_streak = 0
         self.time_since_update += 1
-        self.history.append(convert_x_to_bbox(self.kf.x))
+        self.history.append(convert_x_to_bbox(self.kf.x, self.score))
         return self.history[-1]
 
     def get_state(self):
         """
         Returns the current bounding box estimate.
         """
-        return convert_x_to_bbox(self.kf.x)
+        return convert_x_to_bbox(self.kf.x, self.score)
 
 
 def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):

@@ -18,7 +18,7 @@ AVAILABLE_RESOLUTIONS = {
 
 class Identifier:
     def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
-                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False, conf_thresh: float = 0.0):
+                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False, conf_thresh: float = 0.0, eval_mode: str = ''):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
@@ -50,9 +50,10 @@ class Identifier:
         self.tracking = tracking
         self.trk_timing = trk_timing
         self.conf_thresh = conf_thresh
+        self.eval_mode = eval_mode
 
-    def run(self, img_raw, boxes, gt_name: str = None):
-        if self.evaluation and not gt_name:
+    def run(self, img_raw, boxes, gt_name: str = None, gt_box=None):
+        if self.evaluation and not (gt_name and self.eval_mode):
             exit('[ERROR] If evaluation mode is activated, Ground_Truth name is required to method: Identifier.run()')
         """
         gt_name : temp param for present evaluator TODO: bbox based evaluation...
@@ -63,8 +64,9 @@ class Identifier:
         tracked = self.tracker.update(boxes)
         for tbox in tracked:
             # 좌표형식 (xy,xy)
-            id = int(tbox[4])
+            id = int(tbox[5])
             box = [int(b) * self.rat for b in tbox[:4]]
+            score = tbox[4]
             crop_box = [int(box[0]) - self.pad, int(box[1]) - self.pad, int(box[2]) + self.pad, int(box[3]) + self.pad]
             cropped = img_raw[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]]
 
@@ -82,7 +84,16 @@ class Identifier:
         self.timer.toc()
         if self.evaluation:
             if self.trk_timing == 'default':
-                [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
+                if self.eval_mode == 'existence':
+                    [self.evaluator.count(gt_name, box[1]) for box in face_boxes]
+                elif self.eval_mode == 'detection':
+                    for box in face_boxes:
+                        if not gt_box:
+                            self.evaluator.count('-', box[1])
+                        elif get_iou(box[0], gt_box) > 0.3:
+                            self.evaluator.count(gt_name, box[1])
+                        else:
+                            self.evaluator.count('-', box[1])
         else:
             [plot_center_text(box[:4], img_raw, label=format(box[4], '.4f')) for box in boxes]
             [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]
@@ -97,6 +108,8 @@ class Identifier:
             return self.evaluator
 
     def count_endpoint(self, gt_name):
+        assert self.trk_timing == 'endpoint' and self.eval_mode == 'existence'
+
         if self.trk_timing == 'endpoint':
             for idt in self.identified.keys():
                 self.evaluator.count(gt_name, max(self.identified[idt].items(), key=operator.itemgetter(1))[0])

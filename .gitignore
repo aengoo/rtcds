@@ -1,11 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm,windows,linux
 
-recognizer/dlib/
-/data/
-/stream-server/
-/save/
-
 ### Linux ###
 *~
 
@@ -295,5 +290,17 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm,windows,linux
 recognizer/code_test.py
-recognizer/code_test.py
 recognizer/test.py
+recognizer/.idea/webServers.xml
+recognizer/.idea/**/sshConfigs.xml
+recognizer/.idea/deployment.xml
+recognizer/dlib/
+recognizer/tracker/data/
+recognizer/tracker/output/
+/recognizer/.idea/*
+/data/
+/stream-server/
+/save/
+*/.idea/sshConfigs.xml
+
+*.xml

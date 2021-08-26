@@ -11,8 +11,8 @@ class Counter:
         self.refresh()
 
     def refresh(self):
-        np_mat = np.zeros((self.num_cls, self.num_cls + 1), dtype=int)
-        self.conf_mat = pd.DataFrame(np_mat, self.cls_indices, self.cls_indices + ['-'])
+        np_mat = np.zeros((self.num_cls + 1, self.num_cls + 1), dtype=int)
+        self.conf_mat = pd.DataFrame(np_mat, self.cls_indices + ['-'], self.cls_indices + ['-'])
 
     def count(self, ground_truth: str, predicted: str):
         self.conf_mat[predicted][ground_truth] += 1
