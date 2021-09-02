@@ -67,7 +67,7 @@ class Identifier:
         for tbox in tracked:
             # 좌표형식 (xy,xy)
             id = int(tbox[5])
-            box = [int(b) * self.rat for b in tbox[:4]]
+            box = [int(b * self.rat) for b in tbox[:4]]
             score = tbox[4]
             crop_box = [int(box[0]) - self.pad, int(box[1]) - self.pad, int(box[2]) + self.pad, int(box[3]) + self.pad]
             cropped = img_raw[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]]
@@ -80,9 +80,9 @@ class Identifier:
                 else:
                     self.identified.update({id: {k: 0 for k in self.encoder.get_faces_names() + ['-']}})
                     self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
-                face_boxes.append((crop_box[:4], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
+                face_boxes.append((crop_box[:5], max(self.identified[id].items(), key=operator.itemgetter(1))[0]))
             else:
-                face_boxes.append((crop_box[:4], face_name))
+                face_boxes.append((crop_box[:5], face_name))
 
         self.timer.toc()
         if self.evaluation:
@@ -93,10 +93,15 @@ class Identifier:
                     for box in face_boxes:
                         if not gt_box:
                             self.evaluator.count('-', box[1])
-                        elif get_iou(box[0], gt_box) >= self.iou_thresh:
+                        elif get_iou(box[0][:4], gt_box) >= self.iou_thresh:
                             self.evaluator.count(gt_name, box[1])
                         else:
                             self.evaluator.count('-', box[1])
+                elif self.eval_mode == 'check':
+                    [plot_center_text(box[0][:4], img_raw, label=format(box[4], '.4f')) for box in face_boxes]
+                    [plot_one_box(box[0][:4], img_raw, label=box[1]) for box in face_boxes]
+                    return img_raw
+
         else:
             [plot_center_text(box[:4], img_raw, label=format(box[4], '.4f')) for box in boxes]
             [plot_one_box(box[0], img_raw, label=box[1]) for box in face_boxes]

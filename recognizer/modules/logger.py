@@ -57,7 +57,7 @@ class Logger:
         print('Acc:', counter.get_accuracy(), file=f if f else None)
         print('Multi-Precision:', counter.get_multi_precision(), file=f if f else None)
         print('Multi-Recall:', counter.get_multi_recall(), file=f if f else None)
-        print('F1-score:', counter.get_f1_score(), counter.get_accuracy(), file=f if f else None)
+        print('F1-score:', counter.get_f1_score(), file=f if f else None)
         if f:
             f.close()
 

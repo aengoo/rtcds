@@ -24,7 +24,7 @@ parser.add_argument('--trk-timing', type=str, default='default', help='default, 
 parser.add_argument('--many-lm', action='store_true', help='works as 68 landmarks')
 parser.add_argument('--conf-thresh', type=float, default=0.5, help='')
 parser.add_argument('--iou-thresh', type=float, default=0.3, help='')
-parser.add_argument('--eval_mode', type=str, default='detection', help='existence, detection')
+parser.add_argument('--eval-mode', type=str, default='detection', help='existence, detection, check')
 
 # TODO: conf_thres test
 
@@ -88,7 +88,13 @@ for vid_idx, vid_name in enumerate(vid_list):
             else:
                 gt_name = '-'
                 gt_box = None
-            identifier.run(img_raw, dets, gt_name=gt_name, gt_box=gt_box)
+            img_plt = identifier.run(img_raw, dets, gt_name=gt_name, gt_box=gt_box)
+
+            if OPT.eval_mode == 'check':
+                cv2.imshow('test', img_plt)
+                if cv2.waitKey(1) == ord('q'):
+                    raise StopIteration
+
             # TODO GTNAME 지정해줘야함. 라벨링 읽어오는거부터 프레이밍방식까지 가져와야할듯, 일단 프레임당 박스 하나라고 가정
             overall_timer.toc()
 
