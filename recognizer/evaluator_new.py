@@ -23,7 +23,9 @@ parser.add_argument('--eval-name', type=str, default='result', help='')
 parser.add_argument('--trk-timing', type=str, default='default', help='default, endpoint, number(digit)')
 parser.add_argument('--many-lm', action='store_true', help='works as 68 landmarks')
 parser.add_argument('--conf-thresh', type=float, default=0.5, help='')
+parser.add_argument('--iou-thresh', type=float, default=0.3, help='')
 parser.add_argument('--eval_mode', type=str, default='detection', help='existence, detection')
+
 # TODO: conf_thres test
 
 OPT = parser.parse_args()
@@ -56,7 +58,8 @@ identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                         trk_timing=OPT.trk_timing,
                         mlm=OPT.many_lm,
                         conf_thresh=OPT.conf_thresh,
-                        eval_mode=OPT.eval_mode)
+                        eval_mode=OPT.eval_mode,
+                        iou_thresh=OPT.iou_thresh)
 
 for vid_idx, vid_name in enumerate(vid_list):
     print(f'[{vid_idx+1:d}/{len(vid_list):d}] Processing...')

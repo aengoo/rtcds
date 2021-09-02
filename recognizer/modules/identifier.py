@@ -18,7 +18,8 @@ AVAILABLE_RESOLUTIONS = {
 
 class Identifier:
     def __init__(self, face_path: str, det_res: str, idt_res: str, bbox_pad: int, tsr: int, timer: Timer = None,
-                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False, conf_thresh: float = 0.0, eval_mode: str = ''):
+                 evaluation=False, tracking: bool = True, trk_timing='default', mlm: bool = False,
+                 conf_thresh: float = 0.0, eval_mode: str = '', iou_thresh: float = 0.3):
         """
         face_path : path of face images for face matching(identification)
         det_res : detection resolution
@@ -51,6 +52,7 @@ class Identifier:
         self.trk_timing = trk_timing
         self.conf_thresh = conf_thresh
         self.eval_mode = eval_mode
+        self.iou_thresh = iou_thresh
 
     def run(self, img_raw, boxes, gt_name: str = None, gt_box=None):
         if self.evaluation and not (gt_name and self.eval_mode):
@@ -60,7 +62,7 @@ class Identifier:
         """
         self.timer.tic()
         face_boxes = []
-        boxes = boxes[boxes[:, 4] >= self.conf_thresh]
+        # boxes = boxes[boxes[:, 4] >= self.conf_thresh]
         tracked = self.tracker.update(boxes)
         for tbox in tracked:
             # 좌표형식 (xy,xy)
@@ -71,6 +73,7 @@ class Identifier:
             cropped = img_raw[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]]
 
             face_name = self.encoder.match_face(cropped)
+            face_name = '-' if score < self.conf_thresh else face_name
             if self.tracking:
                 if id in self.identified:
                     self.identified[id][face_name] += 1 if face_name == '-' else self.tsr
@@ -90,7 +93,7 @@ class Identifier:
                     for box in face_boxes:
                         if not gt_box:
                             self.evaluator.count('-', box[1])
-                        elif get_iou(box[0], gt_box) > 0.3:
+                        elif get_iou(box[0], gt_box) >= self.iou_thresh:
                             self.evaluator.count(gt_name, box[1])
                         else:
                             self.evaluator.count('-', box[1])

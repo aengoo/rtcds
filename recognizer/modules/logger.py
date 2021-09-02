@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 logging_exception = {'dlib', '.idea', '__pycache__'}
 
@@ -39,36 +38,36 @@ class Logger:
         if is_save:
             f = open(os.path.join(self.save_dir, 'txt', 'args.txt'), 'a')
         if args is argparse.Namespace:
-            print(args, file=f if f else sys.stdout)
+            print(args, file=f if f else None)
         elif args is dict:
-            [print(args, ':', args[arg], file=f if f else sys.stdout) for arg in args.keys()]
+            [print(args, ':', args[arg], file=f if f else None) for arg in args.keys()]
         if f:
             f.close()
 
     def print_eval(self, counter, is_save=False):
         from utils.eval_util import Counter
-        assert counter is Counter
+        assert type(counter) is Counter
 
         f = None
         if is_save:
             f = open(os.path.join(self.save_dir, 'txt', 'evals.txt'), 'a')
             counter.save_csv(save_path=os.path.join(self.save_dir, 'mat', 'result.csv'))
 
-        print(counter.get_mat(), file=f if f else sys.stdout)
-        print('Acc:', counter.get_accuracy(), file=f if f else sys.stdout)
-        print('Multi-Precision:', counter.get_multi_precision(), file=f if f else sys.stdout)
-        print('Multi-Recall:', counter.get_multi_recall(), file=f if f else sys.stdout)
-        print('F1-score:', counter.get_f1_score(), counter.get_accuracy(), file=f if f else sys.stdout)
+        print(counter.get_mat(), file=f if f else None)
+        print('Acc:', counter.get_accuracy(), file=f if f else None)
+        print('Multi-Precision:', counter.get_multi_precision(), file=f if f else None)
+        print('Multi-Recall:', counter.get_multi_recall(), file=f if f else None)
+        print('F1-score:', counter.get_f1_score(), counter.get_accuracy(), file=f if f else None)
         if f:
             f.close()
 
     def print_timer(self, timer_name, timer, is_save=False):
         from utils.timer import Timer
-        assert timer is Timer
+        assert type(timer) is Timer
 
         f = None
         if is_save:
             f = open(os.path.join(self.save_dir, 'txt', 'time.txt'), 'a')
-        print(timer_name, ':', timer.average_time, file=f if f else sys.stdout)
+        print(timer_name, ':', timer.average_time, file=f if f else None)
         if f:
             f.close()
