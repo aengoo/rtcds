@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 
-class Counter:
+class Counter(object):
     def __init__(self, num_cls: int, cls_indices: list):
         self.num_cls = num_cls
         self.cls_indices = cls_indices
@@ -45,7 +45,6 @@ class Counter:
         precision = self.get_multi_precision()
         recall = self.get_multi_recall()
         return (2 * precision * recall) / (precision + recall)
-
 
 '''
     def get_AP(self):

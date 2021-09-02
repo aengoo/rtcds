@@ -5,6 +5,7 @@ from modules.identifier import Identifier
 from utils.data_utils import *
 from utils.timer import Timer
 from utils.label_reader import *
+from modules.logger import Logger
 import copy
 
 parser = argparse.ArgumentParser()
@@ -99,30 +100,18 @@ for vid_idx, vid_name in enumerate(vid_list):
     if OPT.trk_timing == 'endpoint':
         identifier.count_endpoint(gt_name=str(vid_name).split('_')[0])
 
-print('options:', OPT)
-counter = identifier.get_evaluator()
-print(counter.get_mat())
-print('Acc:', counter.get_accuracy())
-print('Each-Precision:', [cls + format(counter.get_single_precision(cls), '.4f') for cls in counter.cls_indices])
-print('Multi-Precision:', counter.get_multi_precision())
-print('Multi-Recall:', counter.get_multi_recall())
-print('F1-score:', counter.get_f1_score())
+logger = Logger(save_path=os.path.join(OPT.data, 'results'))
 
-# print('PR:', counter.get_PR())
-counter.save_csv(save_path=os.path.join(OPT.data, 'results', 'mat', OPT.eval_name + '.csv'))
-print(f'det_time: {det_timer.average_time:.3f}')
-print(f'idt_time: {idt_timer.average_time:.3f}')
-print(f'overall_time: {overall_timer.average_time:.3f}')
-with open(os.path.join(OPT.data, 'results', 'txt', OPT.eval_name + '.txt'), 'a') as f:
-    print('options:', OPT, file=f)
-    print(counter.get_mat(), file=f)
-    print('Acc:', counter.get_accuracy(), file=f)
-    print('Each-Precision:', [cls + format(counter.get_single_precision(cls), '.4f') for cls in counter.cls_indices], file=f)
-    print('Multi-Precision:', counter.get_multi_precision(), file=f)
-    print('Multi-Recall:', counter.get_multi_recall(), file=f)
-    print('F1-score:', counter.get_f1_score(), file=f)
-    print(f'det_time: {det_timer.average_time:.3f}', file=f)
-    print(f'idt_time: {idt_timer.average_time:.3f}', file=f)
-    print(f'overall_time: {overall_timer.average_time:.3f}', file=f)
+logger.print_args(OPT)
+counter = identifier.get_evaluator()
+logger.print_eval(counter=counter)
+[logger.print_timer(timer_pair[0], timer_pair[1]) for timer_pair in zip(['det', 'idt', 'overall'],
+                                                                        [det_timer, idt_timer, overall_timer])]
+logger.log_codes()
+logger.print_args(OPT, is_save=True)
+logger.print_eval(counter=counter, is_save=True)
+[logger.print_timer(timer_pair[0], timer_pair[1], is_save=True) for timer_pair
+ in zip(['det', 'idt', 'overall'], [det_timer, idt_timer, overall_timer])]
+
 
 
