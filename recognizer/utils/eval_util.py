@@ -35,16 +35,17 @@ class Counter(object):
 
     def get_multi_precision(self):
         # returns 'literally' averaged precision of all classes
-        return sum(self.get_single_precision(cls_name=cls) for cls in self.cls_indices)/self.num_cls
+        return sum(self.get_single_precision(cls_name=cls) for cls in self.cls_indices) / self.num_cls
 
     def get_multi_recall(self):
         # returns 'literally' averaged recall of all classes
-        return sum(self.get_single_recall(cls_name=cls) for cls in self.cls_indices)/self.num_cls
+        return sum(self.get_single_recall(cls_name=cls) for cls in self.cls_indices) / self.num_cls
 
     def get_f1_score(self):
         precision = self.get_multi_precision()
         recall = self.get_multi_recall()
         return (2 * precision * recall) / (precision + recall)
+
 
 '''
     def get_AP(self):

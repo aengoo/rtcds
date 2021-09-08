@@ -14,7 +14,7 @@ torch.set_grad_enabled(False)
 cudnn.benchmark = True
 
 class Detector:
-    def __init__(self, weight_path: str, timer: Timer = None, model: str = 're50'):
+    def __init__(self, weight_path: str, timer: Timer = None, model: str = 're50', conf_thresh: float = 0.5):
         # configure backbone network
         """
         model : re50 or mnet
@@ -34,17 +34,16 @@ class Detector:
         self.device = torch.device("cuda")
         self.net = self.net.to(self.device)
         self.timer = Timer() if timer is None else timer
+        self.conf_thresh = conf_thresh
 
-    def run(self, img_tensor, vectorized=True, conf_thresh: float = 0.5, nms_thr: float = 0.4):
+    def run(self, img_tensor, vectorized=True, nms_thr: float = 0.4):
         self.timer.tic()
         img = np.float32(img_tensor)
         # im_height, im_width = img.shape[:2]
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         img -= (104, 117, 123)
         img = img.transpose(2, 0, 1)
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(self.device)
-        scale = scale.to(self.device)
 
         loc, conf, landms = self.net(img)
 
@@ -59,35 +58,31 @@ class Detector:
         # boxes = boxes * scale
         boxes = boxes.cpu().numpy()
         scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
-        landms = decode_landm(landms.data.squeeze(0), prior_data, self.cfg['variance'])
-        scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
-        scale1 = scale1.to(self.device)
-        landms = landms * scale1
-        landms = landms.cpu().numpy()
+        # landms = decode_landm(landms.data.squeeze(0), prior_data, self.cfg['variance'])
+        # landms = landms.cpu().numpy()
 
         # ignore low scores
-        inds = np.where(scores > conf_thresh)[0]
+        inds = np.where(scores > self.conf_thresh)[0]
         boxes = boxes[inds]
-        landms = landms[inds]
+        # landms = landms[inds]
         scores = scores[inds]
 
         # keep top-K before NMS
         order = scores.argsort()[::-1]
         boxes = boxes[order]
-        landms = landms[order]
+        # landms = landms[order]
         scores = scores[order]
 
         # do NMS
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         keep = py_cpu_nms(dets, nms_thr)
         dets = dets[keep, :]
-        landms = landms[keep]
+        # landms = landms[keep]
 
-        dets = np.concatenate((dets, landms), axis=1)
+        # dets = np.concatenate((dets, landms), axis=1)
+
         self.timer.toc()
-        return dets
+        return dets  # returns only coordinates and score, no landmarks
 
     def get_time_str(self):
         # returns computing time for last operation and average

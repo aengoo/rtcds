@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 import os
 
 logging_exception = {'dlib', '.idea', '__pycache__'}
@@ -32,6 +33,14 @@ class Logger:
             elif os.path.isfile(os.path.join(path_stack, i)):
                 os.makedirs(os.path.join(copy_path, path_stack), exist_ok=True)
                 shutil.copy(os.path.join(path_stack, i), os.path.join(copy_path, path_stack))
+
+    def log_dataframe(self, df: pd.DataFrame, filename, save_plt: bool = False):
+        df.to_csv(path_or_buf=os.path.join(self.save_dir, 'dataframes', filename), sep=',', na_rep='NaN')
+        if save_plt:
+            import seaborn as sns
+            import matplotlib.pyplot as plt
+            sns.pairplot(df)
+            plt.savefig(os.path.join(self.save_dir, 'dataframes', filename.split('.')[0] + '.png'), dpi=300)
 
     def print_args(self, args, is_save=False):
         f = None
