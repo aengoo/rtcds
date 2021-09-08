@@ -34,12 +34,13 @@ class Logger:
                 os.makedirs(os.path.join(copy_path, path_stack), exist_ok=True)
                 shutil.copy(os.path.join(path_stack, i), os.path.join(copy_path, path_stack))
 
-    def log_dataframe(self, df: pd.DataFrame, filename, save_plt: bool = False):
+    def log_dataframe(self, df: pd.DataFrame, filename, save_plt: bool = False, hue_key=''):
+        os.makedirs(os.path.join(self.save_dir, 'dataframes'), exist_ok=True)
         df.to_csv(path_or_buf=os.path.join(self.save_dir, 'dataframes', filename), sep=',', na_rep='NaN')
         if save_plt:
             import seaborn as sns
             import matplotlib.pyplot as plt
-            sns.pairplot(df)
+            sns.pairplot(df, hue=hue_key, markers=["o", "s", "D"])
             plt.savefig(os.path.join(self.save_dir, 'dataframes', filename.split('.')[0] + '.png'), dpi=300)
 
     def print_args(self, args, is_save=False):

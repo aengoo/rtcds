@@ -3,6 +3,7 @@ import argparse
 from modules.detector_new import Detector
 from modules.identifier_new import Identifier
 from utils.data_utils import *
+from utils.general import get_iou
 from utils.timer import Timer
 from utils.label_reader import *
 from tracker.sort import *
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-name', type=str, default='result', help='')
     parser.add_argument('--many-landms', action='store_true', help='works as 68 landmarks')
     parser.add_argument('--conf-thresh', type=float, default=0.5, help='')
-    parser.add_argument('--iou-thresh', type=float, default=0.3, help='')
+    parser.add_argument('--iou-thresh', type=float, default=0.5, help='')
 
     OPT = parser.parse_args()
     if OPT.dual_res and (OPT.vid_res == 'VGA'):
@@ -58,7 +59,7 @@ if __name__ == '__main__':
 
     identifier = Identifier(face_path=os.path.join(OPT.data, OPT.faces),
                             idt_res=OPT.vid_res,
-                            box_ratio=OPT.bbox_pad,
+                            box_ratio=OPT.box_ratio,
                             is_eval=True,
                             timer=idt_timer,
                             landms68=OPT.many_landms)
@@ -100,8 +101,18 @@ if __name__ == '__main__':
                 identified = identifier.run(img_raw, boxes)
                 # identified : [(box, score, idt, face_name, face_dist, face_std_score), ...]
                 for box, score, idt, face_name, face_dist, face_std_score in identified:
-                    if face_name != '-':
-                        dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score])
+                    if gt_name == '-':
+                        if face_name != '-':
+                            dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'False_Match'])
+                    else:
+                        if get_iou(gt_box, box) >= OPT.iou_thresh:
+                            if gt_name == face_name:
+                                dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'True_Match'])
+                            elif face_name != '-':
+                                dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'MisMatch'])
+                        else:
+                            if face_name != '-':
+                                dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'False_Match'])
                 overall_timer.toc()
                 frame_idx += 1
             else:
@@ -109,11 +120,10 @@ if __name__ == '__main__':
         stream.release()
 
     logger = Logger(save_path=os.path.join(OPT.data, 'results'))
-    dist_df = pd.DataFrame(np.array(dist_list), columns=['det_conf', 'box_diagonal', 'face_dist', 'face_std_score'])
+    df_indices = ['det_conf', 'box_diagonal', 'face_dist', 'face_std_score', 'confusion']
+    # confusion : True_Match, (False_UnMatch), False_Match, (True_UnMatch), MisMatch
+    dist_df = pd.DataFrame(np.array(dist_list), columns=df_indices)
     logger.log_codes()
-    logger.log_dataframe(dist_df, 'dist.csv', save_plt=True)
+    logger.log_dataframe(dist_df, 'dist.csv', save_plt=True, hue_key='confusion')
     logger.print_args(OPT, is_save=True)
-
-
-
 
