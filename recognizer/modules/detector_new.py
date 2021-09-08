@@ -13,6 +13,7 @@ import os
 torch.set_grad_enabled(False)
 cudnn.benchmark = True
 
+
 class Detector:
     def __init__(self, weight_path: str, timer: Timer = None, model: str = 're50', conf_thresh: float = 0.5):
         # configure backbone network
