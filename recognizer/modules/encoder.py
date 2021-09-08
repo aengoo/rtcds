@@ -2,61 +2,57 @@ import face_recognition
 import cv2
 import numpy as np
 import os
+from itertools import combinations
+import random
+import copy
 
 """
 code from github/ageitgey/face_recognition
 """
 
 
+def random_combination(iterable, r):
+    pool = tuple(iterable)
+    n = len(pool)
+    indices = sorted(random.sample(range(n), r))
+    return tuple(pool[i] for i in indices)
+
+
 class EncodeFace:
-    def __init__(self, src, landmark68: bool = False, tolerance = 0.6):
-        self.src = os.path.join(src)
+    def __init__(self, target_path, other_path, n=0, landmark68: bool = False, tolerance=0.6):
         self.model = 'large' if landmark68 else 'small'
-        os.makedirs(self.src, exist_ok=True)
 
-        self.encodings = []
-        self.face_names = []
-        # self.encodings = self.encode_all()
-        self.encode_all()
+        self.target_encodings, self.target_names = self.encode_all(target_path)
+        self.other_encodings = self.encode_all(other_path)[0]
+
+        self.n = n
         self.tolerance = tolerance
+        self.temp_encodings = []
+        self.temp_names = []
 
-    def encode_all(self):
+    def encode_all(self, path):
         face_encodings = []
         face_names = []
-        face_dirs = os.listdir(self.src)
+        face_dirs = os.listdir(path)
         for face_dir in face_dirs:
-            path_face_dir = os.path.join(self.src, face_dir)
+            path_face_dir = os.path.join(path, face_dir)
             # face_encodings.update({face_dir: []})
             for face_img in os.listdir(path_face_dir):
-                self.face_names.append(face_dir)
+                face_names.append(face_dir)
                 # img = face_recognition.load_image_file(str(os.path.join(path_face_dir, face_img)))
                 img = face_recognition.load_image_file(os.path.join(path_face_dir, face_img))
                 encodings = face_recognition.face_encodings(img, model=self.model)
                 if len(encodings):
                     encoding = encodings[0]
-                    self.encodings.append(encoding)
-        # return face_encodings, face_names
-    '''
-    def encode_only_front(self):
-        face_encodings = []
-        face_names = []
-        face_dirs = os.listdir(self.src)
-        for face_dir in face_dirs:
-            path_face_dir = os.path.join(self.src, face_dir)
-            # face_names.append(face_dir)
-            for face_img in os.listdir(path_face_dir):
-                if face_img.startswith('front'):
-                    face_names.append(face_dir)
-                    # img = face_recognition.load_image_file(str(os.path.join(path_face_dir, face_img)))
-                    img = face_recognition.load_image_file(os.path.join(path_face_dir, face_img))
-                    encodings = face_recognition.face_encodings(img)
-                    if len(encodings):
-                        encoding = encodings[0]
-                        self.encodings.append(encoding)
-                else:
-                    pass
-        # return face_encodings, face_names
-    '''
+                    face_encodings.append(encoding)
+        return face_encodings, face_names
+
+    def set_random_encodings(self, target_name):
+        encodings = list(random_combination(self.other_encodings, self.n - 1))
+        names = ['HGD'] * (self.n - 1)
+        self.temp_encodings = encodings + [self.target_encodings[self.target_names.index(target_name)]]
+        self.temp_names = names + [target_name]
+
     def match_face(self, face: np.ndarray, get_score=False):
         # print(face.shape)
         name = "-"
@@ -65,9 +61,9 @@ class EncodeFace:
         face_encodings = face_recognition.face_encodings(face[:, :, ::-1], model=self.model)
         if len(face_encodings):
             face_encoding = face_encodings[0]
-            matches = face_recognition.compare_faces(self.encodings, face_encoding, tolerance=self.tolerance)
+            matches = face_recognition.compare_faces(self.temp_encodings, face_encoding, tolerance=self.tolerance)
 
-            face_distances = face_recognition.face_distance(self.encodings, face_encoding)
+            face_distances = face_recognition.face_distance(self.temp_encodings, face_encoding)
             # print(face_distances)
             if face_distances.shape[0]:
                 best_match_index = np.argmin(face_distances)
@@ -77,14 +73,17 @@ class EncodeFace:
                     scores = self.tolerance - face_distances
                     standard_score = (score - np.average(scores)) / np.std(scores)
                 if matches[best_match_index]:
-                    name = self.face_names[best_match_index]
+                    name = self.temp_names[best_match_index]
         if get_score:
             return name, match_distance, standard_score
         else:
             return name, match_distance
 
     def get_faces_cnt(self):
-        return len(self.encodings)
+        if self.n:
+            return self.n
+        else:
+            return len(self.temp_names)
 
     def get_faces_names(self):
-        return self.face_names
+        return self.temp_names

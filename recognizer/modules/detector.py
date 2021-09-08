@@ -56,7 +56,7 @@ class Detector:
         priors = priors.to(self.device)
         prior_data = priors.data
         boxes = decode(loc.data.squeeze(0), prior_data, self.cfg['variance'])
-        # boxes = boxes * scale
+        boxes = boxes * scale
         boxes = boxes.cpu().numpy()
         scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, self.cfg['variance'])
