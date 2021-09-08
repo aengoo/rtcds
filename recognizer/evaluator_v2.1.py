@@ -35,8 +35,6 @@ if __name__ == '__main__':
     parser.add_argument('--iou-thresh', type=float, default=0.5, help='')
 
     OPT = parser.parse_args()
-    if OPT.dual_res and (OPT.vid_res == 'VGA'):
-        exit()
 
     # label_vid_check
     vid_list = os.listdir(str(os.path.join(OPT.data, OPT.vid_path)))

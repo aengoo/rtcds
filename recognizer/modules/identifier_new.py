@@ -44,7 +44,7 @@ class Identifier:
         for tbox in boxes:
             # 좌표형식 (xy,xy)
             idt = -1
-            if len(tbox) >= 5:
+            if len(tbox) > 5:
                 idt = int(tbox[5])
             box = [int(b) for b in tbox[:4]]
             score = tbox[4]
