@@ -11,13 +11,13 @@ class Logger:
         self.save_dir = '.'
         self.set_save_path(save_path, test_id)
 
-    def set_save_path(self, save_path, test_id=''):
-        self.save_dir = os.path.join(save_path, test_id)
-
-        if os.path.exists(self.save_dir) or not test_id:
-            idx_list = [int(dn.split('_')[1]) if dn.startswith('test_' if not test_id else test_id + '_') else -1 for dn in os.listdir(save_path)]
-            test_idx = str(max(idx_list) + 1).zfill(3)
-            self.save_dir = os.path.join(save_path, ('test_' if not test_id else test_id + '_') + test_idx)
+    def set_save_path(self, save_path, test_id: str = ''):
+        if test_id:
+            self.save_dir = os.path.join(save_path, test_id)
+        else:
+            idx_list = [int(dn.split('_')[1]) if dn.startswith('test_') else -1 for dn in os.listdir(save_path)]
+            test_id = str(max(idx_list) + 1).zfill(3)
+            self.save_dir = os.path.join(save_path, 'test_' + test_id)
         os.makedirs(self.save_dir, exist_ok=True)
         os.makedirs(os.path.join(self.save_dir, 'txt'), exist_ok=True)
         os.makedirs(os.path.join(self.save_dir, 'mat'), exist_ok=True)
