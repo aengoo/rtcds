@@ -41,7 +41,7 @@ class Logger:
         if save_plt:
             import seaborn as sns
             import matplotlib.pyplot as plt
-            sns.pairplot(df, vars=df.columns[:-1], hue=hue_key, markers=["o", "s", "D"])
+            sns.pairplot(df, vars=df.columns[:-1], hue=hue_key, markers='.')
             plt.savefig(os.path.join(self.save_dir, 'dataframes', filename.split('.')[0] + '.png'), dpi=300)
 
     def print_args(self, args, is_save=False):

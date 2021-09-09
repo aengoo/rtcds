@@ -70,12 +70,12 @@ class EncodeFace:
                 match_distance = face_distances[best_match_index]
                 if get_score:
                     score = self.tolerance - match_distance
-                    scores = self.tolerance - face_distances
-                    standard_score = (score - np.average(scores)) / np.std(scores)
+                    scores = self.tolerance - face_distances[face_distances <= self.tolerance]
+                    standard_seed = (score - np.average(scores)) / np.std(scores).clip(min=0.000001)
                 if matches[best_match_index]:
                     name = self.temp_names[best_match_index]
         if get_score:
-            return name, match_distance, standard_score
+            return name, match_distance, standard_seed
         else:
             return name, match_distance
 
