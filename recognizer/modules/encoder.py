@@ -57,7 +57,7 @@ class EncodeFace:
         # print(face.shape)
         name = "-"
         match_distance = self.tolerance
-        standard_seed = -10.  # TODO
+        standard_seed = 0.  # TODO
         face_encodings = face_recognition.face_encodings(face[:, :, ::-1], model=self.model)
         if len(face_encodings):
             face_encoding = face_encodings[0]
@@ -69,12 +69,9 @@ class EncodeFace:
                 best_match_index = np.argmin(face_distances)
                 match_distance = face_distances[best_match_index]
                 if get_score:
-                    if face_distances.shape[0] > 1:
-                        score = self.tolerance - match_distance
-                        scores = self.tolerance - face_distances[face_distances <= self.tolerance]
-                        standard_seed = (score - np.average(scores)) / np.std(scores)
-                    elif face_distances.shape[0] == 1:
-                        standard_seed = 10.  # TODO
+                    score = self.tolerance - match_distance
+                    scores = self.tolerance - face_distances
+                    standard_seed = (score - np.average(scores)) / np.std(scores)
                     # standard_seed.clip(-3., 3.)
                 if matches[best_match_index]:
                     name = self.temp_names[best_match_index]
