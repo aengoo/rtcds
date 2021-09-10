@@ -15,7 +15,7 @@ class Logger:
         if test_id:
             self.save_dir = os.path.join(save_path, test_id)
         else:
-            idx_list = [int(dn.split('_')[1]) if dn.startswith('test_') else -1 for dn in os.listdir(save_path)]
+            idx_list = [int(dn.split('_')[1]) if dn.startswith('test_') else -1 for dn in os.listdir(save_path) + ['']]
             test_id = str(max(idx_list) + 1).zfill(3)
             self.save_dir = os.path.join(save_path, 'test_' + test_id)
         os.makedirs(self.save_dir, exist_ok=True)
