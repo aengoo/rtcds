@@ -21,13 +21,13 @@ AVAILABLE_RESOLUTIONS = {
 }
 
 
-def box_adapt(box: list, res: tuple, rat=1.):
+def box_adapt(box: list, rat=1.):
     w, h = (box[2] - box[0], box[3] - box[1])
     if rat != 1.:
         pad = [- ((w * rat) - w) / 2, - ((h * rat) - h) / 2, ((w * rat) - w) / 2, ((h * rat) - h) / 2]
-        new_box = [(xy + pad[idx]) * res[idx % 2] for idx, xy in enumerate(box[:4])] + box[4:]
+        new_box = [(xy + pad[idx]) for idx, xy in enumerate(box[:4])] + box[4:]
     else:
-        new_box = [xy * res[idx % 2] for idx, xy in enumerate(box[:4])] + box[4:]
+        new_box = [xy for idx, xy in enumerate(box[:4])] + box[4:]
     return new_box
 
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
                     gt = vid_label.get_gt_boxes(frame_idx)[0]
                     if len(gt):
                         gt_name = gt[0]
-                        gt_box = box_adapt(gt[1:], res=AVAILABLE_RESOLUTIONS[OPT.vid_res], rat=OPT.box_ratio)
+                        gt_box = box_adapt(gt[1:], rat=OPT.box_ratio)
                     else:
                         gt_name = '-'
                         gt_box = None
