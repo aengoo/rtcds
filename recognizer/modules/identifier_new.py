@@ -40,8 +40,8 @@ class Identifier:
             self.timer.tic()
 
         idt_boxes = []
-        boxes = box_adapt(boxes, self.res, self.box_ratio)
-        for tbox in boxes:
+        adapted_boxes = box_adapt(boxes, self.res, self.box_ratio)
+        for tbox in adapted_boxes:
             # 좌표형식 xyxy
             idt = -1
             if len(tbox) > 5:
@@ -57,6 +57,7 @@ class Identifier:
 
         if self.is_eval:
             return idt_boxes
+
         else:
             # tracking not applied
             [plot_center_text(box[0], img_idt, label=format(box[1], '.4f')) for box in idt_boxes]

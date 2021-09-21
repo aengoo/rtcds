@@ -4,6 +4,7 @@ from modules.detector_new import Detector
 from modules.identifier_new import Identifier
 from utils.data_utils import *
 from utils.general import get_iou
+from utils.eval_util import NewCounter
 from utils.timer import Timer
 from utils.label_reader import *
 from tracker.sort import *
@@ -46,16 +47,15 @@ if __name__ == '__main__':
     parser.add_argument('--label-path', type=str, default='test/label_final', help='')
     parser.add_argument('--weight', type=str, default='weights/Resnet50_Final.pth', help='')
     parser.add_argument('--vid-res', type=str, default='FHD', help='among FHD, HD, sHD and VGA')
-    parser.add_argument('--box-ratio', type=float, default=1.5, help='')
+    parser.add_argument('--box-ratio', type=float, default=1.10, help='')
     parser.add_argument('--mono-res', action='store_true', help='')
-    parser.add_argument('--no-trk', action='store_true', help='do not apply tracking')
-    parser.add_argument('--mode', type=str, default='eval', help='eval, test')
     parser.add_argument('--name', type=str, default='result', help='')
     parser.add_argument('--many-landms', action='store_true', help='works as 68 landmarks')
     parser.add_argument('--conf-thresh', type=float, default=0.5, help='')
     parser.add_argument('--iou-thresh', type=float, default=0.3, help='')
+    parser.add_argument('--event-thresh', type=int, default=10, help='')
+    parser.add_argument('--ts-thresh', type=float, default=3.5, help='')
     parser.add_argument('--repeat', type=int, default=1, help='1 means operate only once')
-
 
     OPT = parser.parse_args()
 
@@ -83,11 +83,13 @@ if __name__ == '__main__':
                             n=OPT.n_faces,
                             idt_res=OPT.vid_res,
                             box_ratio=OPT.box_ratio,
-                            is_eval=OPT.mode == 'eval',
+                            is_eval=True,
                             timer=idt_timer,
                             landms68=OPT.many_landms)
 
-    dist_list = []
+    frame_counter = NewCounter()
+    event_counter = NewCounter()
+
     for i in range(OPT.repeat):
         for vid_idx, vid_name in enumerate(vid_list):
             print(f'[{vid_idx+1:d}/{len(vid_list):d}] Processing...')
@@ -96,13 +98,19 @@ if __name__ == '__main__':
             stream = cv2.VideoCapture(os.path.join(OPT.data, OPT.vid_path, vid_name))
             total_frame = stream.get(cv2.CAP_PROP_FRAME_COUNT)
 
+            vid_gt_name = vid_name.split('_')[0]
             vid_label = VideoLabel(os.path.join(OPT.data, OPT.label_path, str(vid_name) + '.txt'))
 
-            tracker = Sort(max_age=3, min_hits=3, iou_threshold=0.3) if not OPT.no_trk else None  # refreshed for each video
+            tracker = Sort(max_age=3, min_hits=3, iou_threshold=0.3)
 
             identifier.set_random_faces(vid_name.split('_')[0])
 
             frame_idx = 0
+
+            ts_thres = OPT.ts_thresh
+            track_dict = {}
+            event_raised = False
+
             while frame_idx <= total_frame:
                 overall_timer.tic()
                 ret, img_raw = stream.read()
@@ -114,49 +122,54 @@ if __name__ == '__main__':
                     # get ground-truth boxes of each frame
                     gt = vid_label.get_gt_boxes(frame_idx)[0]
                     if len(gt):
-                        gt_name = gt[0]
+                        box_gt_name = gt[0]
                         gt_box = box_adapt(gt[1:], res=AVAILABLE_RESOLUTIONS[OPT.vid_res], rat=OPT.box_ratio)
                     else:
-                        gt_name = '-'
+                        box_gt_name = '-'
                         gt_box = None
-
-                    if tracker:
-                        boxes = tracker.update(boxes)
 
                     identified = identifier.run(img_raw, boxes)
                     # identified : [(box, score, idt, face_name, face_dist, face_std_score), ...]
-                    if OPT.mode == 'eval':
-                        for box, score, idt, face_name, face_dist, face_std_score in identified:
-                            if gt_name == '-':
-                                if face_name != '-':
-                                    dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'False_Match'])
+                    for box, score, idt, face_name, face_dist, face_std_score in identified:
+                        if gt_box:
+                            if get_iou(gt_box, box) > OPT.iou_thresh:
+                                frame_counter.count(box_gt_name, face_name)
                             else:
-                                if get_iou(gt_box, box) >= OPT.iou_thresh:
-                                    if gt_name == face_name:
-                                        dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'True_Match'])
-                                    elif face_name != '-':
-                                        dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'MisMatch'])
+                                frame_counter.count('-', face_name)
+                        else:
+                            frame_counter.count('-', face_name)
+
+                    tracked = tracker.update(boxes)
+                    track_identified = identifier.run(img_raw, tracked)
+                    for box, score, idt, face_name, face_dist, face_std_score in track_identified:
+                        total_score = ((score + face_std_score + (1 - (face_dist*1.65))) * (1. / ts_thres)) ** 2
+                        if idt in track_dict:
+                            if face_name != '-':
+                                if track_dict[idt]['name'] == face_name:
+                                    track_dict[idt]['score'] += total_score
+                                elif track_dict[idt]['score'] < total_score:
+                                    track_dict[idt]['name'] = face_name
+                                    track_dict[idt]['score'] = abs(track_dict[idt]['score'] - total_score)
+                                    track_dict[idt]['raised'] = False
                                 else:
-                                    if face_name != '-':
-                                        dist_list.append([score, get_box_diagonal(box), face_dist, face_std_score, 'False_Match'])
-                    elif OPT.mode == 'test':
-                        cv2.imshow('test', identified)
-                        if cv2.waitKey(1) == ord('q'):
-                            raise StopIteration
-                    overall_timer.toc()
+                                    track_dict[idt]['score'] -= total_score
+                        else:
+                            if face_name != '-':
+                                track_dict.update({idt: {'name': face_name, 'score': total_score, 'raised': False}})
+                            else:
+                                track_dict.update({idt: {'name': face_name, 'score': 0., 'raised': False}})
+
+                    for idt in track_dict.keys():
+                        if track_dict[idt]['score'] > OPT.event_thresh and not track_dict[idt]['raised']:
+                            track_dict[idt]['raised'] = True
+                            event_counter.count(vid_gt_name, track_dict[idt]['name'])
+                            event_raised = True
+
                     frame_idx += 1
                 else:
                     total_frame -= 1
+            if not event_raised:
+                event_counter.count(vid_gt_name, '-')
             stream.release()
 
-    logger = Logger(save_path=os.path.join(OPT.data, 'results'))
-    df_indices = ['det_conf', 'box_diagonal', 'face_dist', 'face_std_score']
-    # confusion : True_Match, (False_UnMatch), False_Match, (True_UnMatch), MisMatch
-    dist_arr = np.array(dist_list)
-    cfs_arr = dist_arr[:, -1]
-    dist_df = pd.DataFrame(np.array(dist_arr[:, :-1], dtype='float32'), columns=df_indices)
-    dist_df['cfs'] = cfs_arr
-    logger.log_codes()
-    logger.log_dataframe(dist_df, 'dist.csv', save_plt=True, hue_key='cfs')
-    logger.print_args(OPT, is_save=True)
 
