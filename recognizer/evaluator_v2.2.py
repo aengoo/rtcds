@@ -171,5 +171,11 @@ if __name__ == '__main__':
             if not event_raised:
                 event_counter.count(vid_gt_name, '-')
             stream.release()
-
+    logger = Logger(save_path=os.path.join(OPT.data, 'results'))
+    logger.log_codes()
+    logger.print_new_eval(counter=frame_counter, is_save=False, print_name='frame')
+    logger.print_new_eval(counter=event_counter, is_save=False, print_name='track')
+    logger.print_new_eval(counter=frame_counter, is_save=True, print_name='frame')
+    logger.print_new_eval(counter=event_counter, is_save=True, print_name='track')
+    logger.print_args(OPT, is_save=True)
 

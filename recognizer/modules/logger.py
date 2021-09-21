@@ -48,10 +48,10 @@ class Logger:
         f = None
         if is_save:
             f = open(os.path.join(self.save_dir, 'txt', 'args.txt'), 'a')
-        if args is argparse.Namespace:
-            print(args, file=f if f else None)
-        elif args is dict:
+        if args is dict:
             [print(args, ':', args[arg], file=f if f else None) for arg in args.keys()]
+        else:
+            print(args, file=f if f else None)
         if f:
             f.close()
 
@@ -80,5 +80,20 @@ class Logger:
         if is_save:
             f = open(os.path.join(self.save_dir, 'txt', 'time.txt'), 'a')
         print(timer_name, ':', timer.average_time, file=f if f else None)
+        if f:
+            f.close()
+
+    def print_new_eval(self, counter, is_save=False, print_name=''):
+        from utils.eval_util import NewCounter
+        assert type(counter) is NewCounter
+
+        f = None
+        if is_save:
+            f = open(os.path.join(self.save_dir, 'txt', print_name + '_evals.txt'), 'a')
+
+        print('Acc:', counter.get_accuracy(), file=f if f else None)
+        print('Precision:', counter.get_precision(), file=f if f else None)
+        print('Recall:', counter.get_recall(), file=f if f else None)
+        print('F1-score:', counter.get_f1_score(), file=f if f else None)
         if f:
             f.close()
