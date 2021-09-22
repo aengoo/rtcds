@@ -54,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument('--conf-thresh', type=float, default=0.5, help='')
     parser.add_argument('--iou-thresh', type=float, default=0.3, help='')
     parser.add_argument('--event-thresh', type=int, default=10, help='')
-    parser.add_argument('--ts-thresh', type=float, default=3.5, help='')
+    parser.add_argument('--ts-thresh', type=float, default=4.0, help='')
     parser.add_argument('--repeat', type=int, default=1, help='1 means operate only once')
 
     OPT = parser.parse_args()
@@ -142,7 +142,7 @@ if __name__ == '__main__':
                     tracked = tracker.update(boxes)
                     track_identified = identifier.run(img_raw, tracked)
                     for box, score, idt, face_name, face_dist, face_std_score in track_identified:
-                        total_score = ((score + face_std_score + (1 - (face_dist*1.65))) * (1. / ts_thres)) ** 2
+                        total_score = ((score + face_std_score + (1 - (face_dist*1.65))) * (1. / ts_thres)) ** 3
                         if idt in track_dict:
                             if face_name != '-':
                                 if track_dict[idt]['name'] == face_name:
