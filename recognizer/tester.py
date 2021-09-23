@@ -40,14 +40,13 @@ def get_box_diagonal(xyxy):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='../data', help='')
-    parser.add_argument('--t-faces', type=str, default='target/faces-17', help='')
-    parser.add_argument('--k-faces', type=str, default='target/faces-400', help='')
-    parser.add_argument('--n-faces', type=int, default=20, help='')
-    parser.add_argument('--vid-path', type=str, default='test/vid_final', help='')
-    parser.add_argument('--label-path', type=str, default='test/label_final', help='')
+    parser.add_argument('--t-faces', type=str, default='target/faces-celeb', help='')
+    parser.add_argument('--k-faces', type=str, default='target/faces-17', help='')
+    parser.add_argument('--n-faces', type=int, default=15, help='')
+    parser.add_argument('--vid-path', type=str, default='test/vid_celeb', help='')
     parser.add_argument('--weight', type=str, default='weights/Resnet50_Final.pth', help='')
-    parser.add_argument('--vid-res', type=str, default='FHD', help='among FHD, HD, sHD and VGA')
-    parser.add_argument('--box-ratio', type=float, default=1.10, help='')
+    parser.add_argument('--vid-res', type=str, default='HD', help='among FHD, HD, sHD and VGA')
+    parser.add_argument('--box-ratio', type=float, default=1.30, help='')
     parser.add_argument('--mono-res', action='store_true', help='')
     parser.add_argument('--save-vid', action='store_true', help='')
     parser.add_argument('--name', type=str, default='result', help='')
@@ -62,15 +61,6 @@ if __name__ == '__main__':
 
     # label_vid_check
     vid_list = os.listdir(str(os.path.join(OPT.data, OPT.vid_path)))
-    label_list = os.listdir(str(os.path.join(OPT.data, OPT.label_path)))
-    trimmed_label_list = [label_name.replace('.txt', '') for label_name in label_list]
-    vid_list.sort()
-    trimmed_label_list.sort()
-    if vid_list != trimmed_label_list:
-        print('label-vid check detected some problem!')
-        exit()
-    else:
-        print('label-vid check completed with no problem!')
 
     overall_timer, det_timer, idt_timer = (Timer(), Timer(), Timer())
 
@@ -88,8 +78,6 @@ if __name__ == '__main__':
                             timer=idt_timer,
                             landms68=OPT.many_landms)
 
-    frame_counter = NewCounter()
-    event_counter = NewCounter()
     logger = Logger(save_path=os.path.join(OPT.data, 'results'))
 
     for i in range(OPT.repeat):
@@ -100,12 +88,9 @@ if __name__ == '__main__':
             stream = cv2.VideoCapture(os.path.join(OPT.data, OPT.vid_path, vid_name))
             total_frame = stream.get(cv2.CAP_PROP_FRAME_COUNT)
 
-            vid_gt_name = vid_name.split('_')[0]
-            vid_label = VideoLabel(os.path.join(OPT.data, OPT.label_path, str(vid_name) + '.txt'))
+            tracker = Sort(max_age=3, min_hits=1, iou_threshold=0.5)
 
-            tracker = Sort(max_age=3, min_hits=1, iou_threshold=0.3)
-
-            identifier.set_random_faces(vid_name.split('_')[0])
+            identifier.set_all_random_faces()
 
             frame_idx = 0
 
@@ -121,25 +106,8 @@ if __name__ == '__main__':
 
                     boxes = detector.run(img_det)
 
-                    # get ground-truth boxes of each frame
-                    gt = vid_label.get_gt_boxes(frame_idx)[0]
-                    if len(gt):
-                        box_gt_name = gt[0]
-                        gt_box = box_adapt(gt[1:], rat=OPT.box_ratio)
-                    else:
-                        box_gt_name = '-'
-                        gt_box = None
-
                     identified = identifier.run(img_raw, boxes)
                     # identified : [(box, score, idt, face_name, face_dist, face_std_score), ...]
-                    for box, score, idt, face_name, face_dist, face_std_score in identified:
-                        if gt_box:
-                            if get_iou(gt_box, box) > OPT.iou_thresh:
-                                frame_counter.count(box_gt_name, face_name)
-                            else:
-                                frame_counter.count('-', face_name)
-                        else:
-                            frame_counter.count('-', face_name)
 
                     tracked = tracker.update(boxes)
                     track_identified = identifier.run(img_raw, tracked)
@@ -166,7 +134,6 @@ if __name__ == '__main__':
                     for idt in track_dict.keys():
                         if track_dict[idt]['score'] > OPT.event_thresh and not track_dict[idt]['raised']:
                             track_dict[idt]['raised'] = True
-                            event_counter.count(vid_gt_name, track_dict[idt]['name'])
                             event_raised = True
 
                     if OPT.save_vid:
@@ -179,21 +146,17 @@ if __name__ == '__main__':
                                 else:
                                     plot_one_box(track_dict[idt]['last_box'], img_raw)
                                 track_dict[idt]['plotted'] = True
+                        cv2.imshow('test', img_raw)
+                        if cv2.waitKey(1) == ord('q'):
+                            raise StopIteration
                         logger.record_frame(img_raw, vid_name, stream.get(cv2.CAP_PROP_FPS),
                                             int(stream.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                             int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
-
                     frame_idx += 1
                 else:
                     total_frame -= 1
-            if not event_raised:
-                event_counter.count(vid_gt_name, '-')
             stream.release()
     logger.log_codes()
-    logger.print_new_eval(counter=frame_counter, is_save=False, print_name='frame')
-    logger.print_new_eval(counter=event_counter, is_save=False, print_name='track')
-    logger.print_new_eval(counter=frame_counter, is_save=True, print_name='frame')
-    logger.print_new_eval(counter=event_counter, is_save=True, print_name='track')
     logger.print_args(OPT, is_save=True)
 

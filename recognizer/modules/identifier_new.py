@@ -50,7 +50,7 @@ class Identifier:
             score = tbox[4]
             cropped = img_idt[box[1]:box[3], box[0]:box[2]]
             face_name, face_dist, face_std_score = self.encoder.match_face(cropped, get_score=True)
-            idt_boxes.append((box, score, idt, face_name, face_dist, face_std_score))
+            idt_boxes.append([box, score, idt, face_name, face_dist, face_std_score])
 
         if self.timer:
             self.timer.toc()
@@ -66,3 +66,6 @@ class Identifier:
 
     def set_random_faces(self, gt_name):
         self.encoder.set_random_encodings(gt_name)
+
+    def set_all_random_faces(self):
+        self.encoder.set_all_random_encodings()

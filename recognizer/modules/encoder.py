@@ -49,9 +49,15 @@ class EncodeFace:
 
     def set_random_encodings(self, target_name):
         encodings = list(random_combination(self.other_encodings, self.n - 1))
-        names = ['HGD'] * (self.n - 1)
+        names = ['KFACE' + str(i).zfill(4) for i in range(self.n - 1)]
         self.temp_encodings = encodings + [self.target_encodings[self.target_names.index(target_name)]]
         self.temp_names = names + [target_name]
+
+    def set_all_random_encodings(self):
+        encodings = list(random_combination(self.other_encodings, len(self.target_names)))
+        names = ['KFACE' + str(i).zfill(4) for i in range(len(self.target_names))]
+        self.temp_encodings = encodings + self.target_encodings
+        self.temp_names = names + self.target_names
 
     def match_face(self, face: np.ndarray, get_score=False):
         # print(face.shape)

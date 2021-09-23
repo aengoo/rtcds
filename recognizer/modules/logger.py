@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import os
+import cv2
 
 logging_exception = {'dlib', '.idea', '__pycache__'}
 
@@ -9,6 +10,8 @@ logging_exception = {'dlib', '.idea', '__pycache__'}
 class Logger:
     def __init__(self, save_path, test_id=''):
         self.save_dir = '.'
+        self.vid_save = None
+        self.vid_writer = None
         self.set_save_path(save_path, test_id)
 
     def set_save_path(self, save_path, test_id: str = ''):
@@ -21,6 +24,7 @@ class Logger:
         os.makedirs(self.save_dir, exist_ok=True)
         os.makedirs(os.path.join(self.save_dir, 'txt'), exist_ok=True)
         os.makedirs(os.path.join(self.save_dir, 'mat'), exist_ok=True)
+        os.makedirs(os.path.join(self.save_dir, 'vid'), exist_ok=True)
 
     def log_codes(self, path_stack='.'):
         import shutil
@@ -97,3 +101,14 @@ class Logger:
         print('F1-score:', counter.get_f1_score(), file=f if f else None)
         if f:
             f.close()
+
+    def record_frame(self, img, save_name, fps, width, height):
+        if self.vid_save != save_name:
+            self.vid_save = save_name
+            if isinstance(self.vid_writer, cv2.VideoWriter):
+                self.vid_writer.release()  # release previous video writer
+            # fps = stream.get(cv2.CAP_PROP_FPS)
+            # w = int(stream.get(cv2.CAP_PROP_FRAME_WIDTH))
+            # h = int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.vid_writer = cv2.VideoWriter(os.path.join(self.save_dir, 'vid', save_name), cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        self.vid_writer.write(img)
