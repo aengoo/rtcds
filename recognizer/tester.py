@@ -104,7 +104,7 @@ if __name__ == '__main__':
                 if ret:
                     img_det = cv2.resize(img_raw, (640, 360)) if not OPT.mono_res else copy.deepcopy(img_raw)
 
-                    boxes = detector.run(img_det)
+                    boxes = np.clip(detector.run(img_det), 0., 1.)
 
                     identified = identifier.run(img_raw, boxes)
                     # identified : [(box, score, idt, face_name, face_dist, face_std_score), ...]

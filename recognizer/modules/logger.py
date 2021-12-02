@@ -102,6 +102,13 @@ class Logger:
         if f:
             f.close()
 
+    def log_pred(self, dir_name, file_name, data_list: list):
+        os.makedirs(os.path.join(self.save_dir, dir_name), exist_ok=True)
+        with open(os.path.join(self.save_dir, dir_name, file_name + '.txt'), 'a') as f:
+            for ln in data_list:
+                [print(i, end=',', file=f) for i in ln]
+                print(file=f)
+
     def record_frame(self, img, save_name, fps, width, height):
         if self.vid_save != save_name:
             self.vid_save = save_name

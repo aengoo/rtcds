@@ -59,6 +59,9 @@ class EncodeFace:
         self.temp_encodings = encodings + self.target_encodings
         self.temp_names = names + self.target_names
 
+    def get_embed(self, face):
+        return face_recognition.face_encodings(face[:, :, ::-1], model=self.model)
+
     def match_face(self, face: np.ndarray, get_score=False):
         # print(face.shape)
         name = "-"

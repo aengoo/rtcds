@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 import modules.encoder as face_encoder
@@ -48,9 +49,22 @@ class Identifier:
                 idt = int(tbox[5])
             box = [int(b) for b in tbox[:4]]
             score = tbox[4]
+
+            if box[1] < 0:
+                box[1] = 0
+            if box[0] < 0:
+                box[0] = 0
+
             cropped = img_idt[box[1]:box[3], box[0]:box[2]]
-            face_name, face_dist, face_std_score = self.encoder.match_face(cropped, get_score=True)
-            idt_boxes.append([box, score, idt, face_name, face_dist, face_std_score])
+
+            rs_x = 80
+            try:
+                face_name, face_dist, face_std_score = self.encoder.match_face(cv2.resize(cropped, dsize=(rs_x, int(rs_x*((box[3]-box[1])/(box[2]-box[0]))))) if box[2]-box[0] > rs_x else cropped, get_score=True)
+                # face_name, face_dist, face_std_score = self.encoder.match_face(cropped, get_score=True)
+                # TODO: 인코딩 과정에서 해상도가 너무 크면 부하가 너무 크게 걸려서..
+                idt_boxes.append([box, score, idt, face_name, face_dist, face_std_score])
+            except Exception as e:
+                print(str(e), box)
 
         if self.timer:
             self.timer.toc()
@@ -63,6 +77,18 @@ class Identifier:
             [plot_center_text(box[0], img_idt, label=format(box[1], '.4f')) for box in idt_boxes]
             [plot_one_box(box[0], img_idt, label=box[3]) for box in idt_boxes]
             return img_idt
+
+    def get_face_embeds(self, img_idt, boxes):
+        idt_embeds = []
+        adapted_boxes = box_adapt(boxes, self.res, self.box_ratio)
+        for tbox in adapted_boxes:
+            box = [int(b) for b in tbox[:4]]
+            score = tbox[4]
+            cropped = img_idt[box[1]:box[3], box[0]:box[2]]
+            embeds = self.encoder.get_embed(cropped)
+            if len(embeds):
+                idt_embeds.append(box + [score] + embeds[0].tolist())
+        return idt_embeds
 
     def set_random_faces(self, gt_name):
         self.encoder.set_random_encodings(gt_name)

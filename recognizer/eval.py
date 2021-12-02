@@ -94,6 +94,16 @@ if __name__ == '__main__':
 
     for i in range(OPT.repeat):
         for vid_idx, vid_name in enumerate(vid_list):
+
+            det_pred_list = []
+            trk_pred_list = []
+            det_idt_pred_list = []
+            trk_idt_pred_list = []
+            cls_pred_list = []
+            det_embeds = []
+            trk_embeds = []
+
+
             print(f'[{vid_idx+1:d}/{len(vid_list):d}] Processing...')
 
             # stream = LoadImages(os.path.join(OPT.data, OPT.vid_path, vid_name), print_info=False)
@@ -121,6 +131,8 @@ if __name__ == '__main__':
 
                     boxes = detector.run(img_det)
 
+                    [det_pred_list.append([frame_idx] + box.tolist()) for box in boxes]
+
                     # get ground-truth boxes of each frame
                     gt = vid_label.get_gt_boxes(frame_idx)[0]
                     if len(gt):
@@ -130,8 +142,13 @@ if __name__ == '__main__':
                         box_gt_name = '-'
                         gt_box = None
 
+                    [det_embeds.append([frame_idx] + det_embed) for det_embed in identifier.get_face_embeds(img_raw, boxes)]
+
                     identified = identifier.run(img_raw, boxes)
                     # identified : [(box, score, idt, face_name, face_dist, face_std_score), ...]
+
+                    [det_idt_pred_list.append([frame_idx] + det_idt_pred[0] + det_idt_pred[1:]) for det_idt_pred in identified]
+
                     for box, score, idt, face_name, face_dist, face_std_score in identified:
                         if gt_box:
                             if get_iou(gt_box, box) > OPT.iou_thresh:
@@ -142,7 +159,15 @@ if __name__ == '__main__':
                             frame_counter.count('-', face_name)
 
                     tracked = tracker.update(boxes)
+
+                    [trk_embeds.append([frame_idx] + trk_embed) for trk_embed in identifier.get_face_embeds(img_raw, tracked)]
+
+                    [trk_pred_list.append([frame_idx] + trk_box.tolist()) for trk_box in tracked]
+
                     track_identified = identifier.run(img_raw, tracked)
+
+                    [trk_idt_pred_list.append([frame_idx] + trk_idt_pred[0] + trk_idt_pred[1:]) for trk_idt_pred in track_identified]
+
                     for box, score, idt, face_name, face_dist, face_std_score in track_identified:
                         total_score = ((score + face_std_score + (1 - (face_dist*1.65))) * (1. / ts_thres)) ** 3
                         if idt in track_dict:
@@ -167,6 +192,8 @@ if __name__ == '__main__':
                         if track_dict[idt]['score'] > OPT.event_thresh and not track_dict[idt]['raised']:
                             track_dict[idt]['raised'] = True
                             event_counter.count(vid_gt_name, track_dict[idt]['name'])
+
+                            cls_pred_list.append([frame_idx, vid_gt_name, track_dict[idt]['name'], track_dict[idt]['score']])
                             event_raised = True
 
                     if OPT.save_vid:
@@ -183,10 +210,18 @@ if __name__ == '__main__':
                                             int(stream.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                             int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
-
                     frame_idx += 1
                 else:
                     total_frame -= 1
+            tmp_file_name = '.'.join(vid_name.split('.')[:-1])
+            logger.log_pred('prediction', tmp_file_name + '_det', det_pred_list)
+            logger.log_pred('prediction', tmp_file_name + '_trk', trk_pred_list)
+            logger.log_pred('prediction', tmp_file_name + '_det_idt', det_idt_pred_list)
+            logger.log_pred('prediction', tmp_file_name + '_trk_idt', trk_idt_pred_list)
+            logger.log_pred('prediction', tmp_file_name + '_cls', cls_pred_list)
+            logger.log_pred('prediction', tmp_file_name + '_det_embeds', det_embeds)
+            logger.log_pred('prediction', tmp_file_name + '_trk_embeds', trk_embeds)
+
             if not event_raised:
                 event_counter.count(vid_gt_name, '-')
             stream.release()
@@ -197,6 +232,7 @@ if __name__ == '__main__':
     save Identified faces (face embed, embed distance, embed z-score, idt prediction)
     save Raised Identification (total score, idt conclusion)
     """
+
     logger.log_codes()
     logger.print_new_eval(counter=frame_counter, is_save=False, print_name='frame')
     logger.print_new_eval(counter=event_counter, is_save=False, print_name='track')
